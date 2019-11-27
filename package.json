@@ -1,0 +1,25 @@
+{
+  "name": "previewimages",
+  "version": "1.0.0",
+  "description": "Generate previewimages of websites",
+  "main": "index.js",
+  "scripts": {
+    "generate": "node previewimages.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dennishagemeier/previewimages.git"
+  },
+  "author": "Dennis Hagemeier",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dennishagemeier/previewimages/issues"
+  },
+  "homepage": "https://github.com/dennishagemeier/previewimages#readme",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "fs": "0.0.1-security",
+    "node-fetch": "^2.6.0",
+    "puppeteer": "^2.0.0"
+  }
+}

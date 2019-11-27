@@ -1,1 +1,1 @@
-# previewimages
+# Generate preview images
