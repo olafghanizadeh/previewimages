@@ -20,7 +20,11 @@ async function getscreen(filename, url) {
   }
 }
 
-async function setpuppeteer(response) {  
+async function setpuppeteer(response) {
+
+  if (!fs.existsSync(dist)){
+    fs.mkdirSync(dist);
+  }
 
   try {
     browser = await puppeteer.launch({ headless: true });
