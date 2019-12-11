@@ -1,67 +1,89 @@
 const axios = require('axios');
 const puppeteer = require('puppeteer');
-const fs = require('fs');
+const { Storage } = require('@google-cloud/storage');
+require('dotenv').config()
+
+const GOOGLE_CLOUD_PROJECT_ID = "wwwd-hagemeiercom";
+const BUCKET_NAME = "previewimages";
+const CLIENTEMAIL = process.env.GOOGLE_CLIENT_EMAIL;
+const PRIVATEKEY = process.env.GOOGLE_PRIVATE_KEY;
+const credentials = {
+  client_email : CLIENTEMAIL,
+  private_key : PRIVATEKEY
+}
 
 const settings = {
   source: "https://www.d-hagemeier.com/preview-images.json",
   imgwidth: 1200,
-  imgheight: 628,
-  dist: __dirname + "/dist/"
+  imgheight: 628
 }
 
-async function getscreen(filename, url) {
+async function setupGoogleStorage(response) {
+
   try {
-    console.log("Getting: " + url);
-    await page.setViewport({ width: settings.imgwidth, height: settings.imgheight });
-    await page.goto(url, { waitUntil: 'networkidle2' });
-    await page.screenshot({ 
-      path: settings.dist + filename + ".png",
-      type: 'png'
+    const storage = new Storage({
+      projectId: GOOGLE_CLOUD_PROJECT_ID,
+      credentials: credentials
     });
-    console.log("Finished: " + settings.dist + filename + ".png");
-  }
-  catch (err) {
-    console.log('err :', err);
-  }
-}
-
-async function setpuppeteer(response) {
-
-  if (!fs.existsSync(settings.dist)){
-    fs.mkdirSync(settings.dist);
-  }
-
-  try {
-    browser = await puppeteer.launch({ headless: true });
-    page = await browser.newPage();
+    const bucket = storage.bucket(BUCKET_NAME);
   
     var i;
     for (i = 0; i < response.length; i++) {
-  
+
       let filename = response[i].filename;
       let path = response[i].path;
-      let disturl = settings.dist + filename + ".png";
-  
-      if (fs.existsSync(disturl)) {
-        console.log("File exists");
+      let file = bucket.file(filename + ".png");
+      let exists = await file.exists().then(function(data) { return data[0]; });
+      
+      if(exists == true) {
+        console.log("Image already exists: " + filename + ".png")
       } else {
-        await getscreen(filename, path);
+        await get(path, file, filename)
       }
-  
+
     }
-  } catch(err) {
-    console.error(err)
+  } catch (err) {
+    console.log("Error setupGoogleStorage: ", err);
   }
 
-  browser.close();
-  console.log('Done!');
+}
 
+async function get(path, file, filename) {
+  browser = await puppeteer.launch({ headless: true });
+  page = await browser.newPage();
+  const buffer = await getscreen(path, filename);
+  await uploadBuffer(file, buffer, filename)
+  console.log("Uploaded: https://preview.d-hagemeier.com/" + filename + ".png")
+  await file.makePublic();
+  browser.close();
+}
+
+async function getscreen(url, filename) {
+  try {
+    console.log("Getting: " + url);
+    await page.setViewport({ width: settings.imgwidth, height: settings.imgheight });
+    await page.goto(url, { waitUntil: 'networkidle0' });
+    const buffer = await page.screenshot();
+    console.log("Got: " + filename + ".png");
+    return buffer;
+  }
+  catch (err) {
+    console.log('Error getscreen:', err);
+  }
+}
+
+async function uploadBuffer(file, buffer, filename) {
+  return new Promise((resolve) => {
+      file.save(buffer, { destination: filename }, () => {
+          resolve();
+      });
+  })
 }
 
 axios.get(settings.source)
   .then((response) => {
-    setpuppeteer(response.data);
+    setupGoogleStorage(response.data);
   })
-  .catch((error) => {
-    console.log('error :', error)
+  .catch((err) => {
+    console.log('Error Axios: ', err)
   });
