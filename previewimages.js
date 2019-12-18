@@ -7,7 +7,8 @@ require('dotenv').config()
 const GOOGLE_CLOUD_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID;
 const BUCKET_NAME = process.env.GOOGLE_BUCKET_NAME;
 const CLIENTEMAIL = process.env.GOOGLE_CLIENT_EMAIL;
-const PRIVATEKEY = process.env.GOOGLE_PRIVATE_KEY;
+const PRIVATEKEY = Buffer.from(process.env.GOOGLE_PRIVATE_KEY, 'base64').toString();
+
 const credentials = {
   client_email : CLIENTEMAIL,
   private_key : PRIVATEKEY
