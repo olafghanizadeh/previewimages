@@ -3,8 +3,8 @@ const puppeteer = require('puppeteer');
 const { Storage } = require('@google-cloud/storage');
 require('dotenv').config()
 
-const GOOGLE_CLOUD_PROJECT_ID = "wwwd-hagemeiercom";
-const BUCKET_NAME = "previewimages";
+const GOOGLE_CLOUD_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID;
+const BUCKET_NAME = process.env.GOOGLE_BUCKET_NAME;
 const CLIENTEMAIL = process.env.GOOGLE_CLIENT_EMAIL;
 const PRIVATEKEY = process.env.GOOGLE_PRIVATE_KEY;
 const credentials = {
@@ -53,7 +53,7 @@ async function get(path, file, filename) {
   page = await browser.newPage();
   const buffer = await getscreen(path, filename);
   await uploadBuffer(file, buffer, filename)
-  console.log("Uploaded: https://preview.d-hagemeier.com/" + filename + ".png")
+  console.log("Uploaded: " + filename + ".png")
   await file.makePublic();
   browser.close();
 }
