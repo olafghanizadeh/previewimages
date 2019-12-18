@@ -1,6 +1,7 @@
 const axios = require('axios');
 const puppeteer = require('puppeteer');
 const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
 require('dotenv').config()
 
 const GOOGLE_CLOUD_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID;
@@ -80,10 +81,26 @@ async function uploadBuffer(file, buffer, filename) {
   })
 }
 
+function dummydist() {
+  if (!fs.existsSync('dist')){
+    fs.mkdirSync('dist');
+  }
+  fs.writeFile('dist/index.html', '', function (err) {
+    if (err) throw err;
+    console.log('Dummy dist created');
+  });
+}
+
 axios.get(settings.source)
   .then((response) => {
     setupGoogleStorage(response.data);
   })
   .catch((err) => {
     console.log('Error Axios: ', err)
+  })
+  .finally(() => {
+    dummydist();
   });
+
+
+
