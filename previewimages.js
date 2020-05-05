@@ -42,13 +42,13 @@ function createDirectory(dirPath) {
 async function setupPuppeteer(response) {
   try {
     browser = await puppeteer.launch({ headless: true });
-    distDir = await createDirectory("public/.cache");
+    distDir = await createDirectory("public/cache");
 
     var i;
     for (i = 0; i < response.length; i++) {
       let filename = response[i].filename;
       let path = response[i].path;
-      let distUrl = "public/.cache/" + filename + ".png";
+      let distUrl = "public/cache/" + filename + ".png";
       let existFlag = await fileExist(distUrl);
       if (existFlag) {
         await getScreenshot(path, filename, distUrl);

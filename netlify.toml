@@ -7,6 +7,3 @@
   to = "https://www.d-hagemeier.com/"
   status = 301
   force = true
-
-[[plugins]]
-  package = "netlify-plugin-gatsby-cache"
