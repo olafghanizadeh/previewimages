@@ -3,7 +3,7 @@
   publish = "public"
 
 [[redirects]]
-  from = "/"
+  from = "https://d-hagemeier-previewimages.netlify.app/"
   to = "https://www.d-hagemeier.com/"
   status = 301
   force = true
