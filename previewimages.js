@@ -1,107 +1,110 @@
-const axios = require('axios');
-const puppeteer = require('puppeteer');
-const { Storage } = require('@google-cloud/storage');
-const fs = require('fs');
-require('dotenv').config()
-
-const GOOGLE_CLOUD_PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID;
-const BUCKET_NAME = process.env.GOOGLE_BUCKET_NAME;
-const CLIENTEMAIL = process.env.GOOGLE_CLIENT_EMAIL;
-const PRIVATEKEY = Buffer.from(process.env.GOOGLE_PRIVATE_KEY, 'base64').toString();
-
-const credentials = {
-  client_email : CLIENTEMAIL,
-  private_key : PRIVATEKEY
-}
+const axios = require("axios");
+const puppeteer = require("puppeteer");
+const fs = require("fs");
+require("dotenv").config();
 
 const settings = {
   source: "https://www.d-hagemeier.com/preview-images.json",
+  domain: "https://www.d-hagemeier.com",
   imgwidth: 1200,
-  imgheight: 628
+  imgheight: 628,
+};
+
+/**
+ * Helper for file existence
+ * @param {String} filePath - Path to check for existence
+ */
+function fileExist(filePath) {
+  return new Promise((resolve, reject) => {
+    fs.access(filePath, fs.F_OK, (err) => {
+      if (err) {
+        // File needs to be generated
+        return resolve(err);
+      }
+      reject("File exists");
+    });
+  });
+}
+/**
+ * Helper to create directory
+ * @param {String} dirPath - Path to directory
+ */
+function createDirectory(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath);
+  }
 }
 
-async function setupGoogleStorage(response) {
-
+/**
+ * Start Puppeteer, check for file existence and pass files
+ * @param {Object} response - List of files to screenshot
+ */
+async function setupPuppeteer(response) {
   try {
-    const storage = new Storage({
-      projectId: GOOGLE_CLOUD_PROJECT_ID,
-      credentials: credentials
-    });
-    const bucket = storage.bucket(BUCKET_NAME);
-  
+    browser = await puppeteer.launch({ headless: true });
+    distDir = await createDirectory("public/.cache");
+
     var i;
     for (i = 0; i < response.length; i++) {
-
       let filename = response[i].filename;
       let path = response[i].path;
-      let file = bucket.file(filename + ".png");
-      let exists = await file.exists().then(function(data) { return data[0]; });
-      
-      if(exists == true) {
-        console.log("Image already exists: " + filename + ".png")
-      } else {
-        await get(path, file, filename)
+      let distUrl = "public/.cache/" + filename + ".png";
+      let existFlag = await fileExist(distUrl);
+      if (existFlag) {
+        await getScreenshot(path, filename, distUrl);
       }
-
     }
   } catch (err) {
-    console.log("Error setupGoogleStorage: ", err);
+    console.log(err);
+  } finally {
+    browser.close();
   }
-
 }
 
-async function get(path, file, filename) {
-  browser = await puppeteer.launch({ headless: true });
-  page = await browser.newPage();
-  const buffer = await getscreen(path, filename);
-  await uploadBuffer(file, buffer, filename)
-  console.log("Uploaded: " + filename + ".png")
-  await file.makePublic();
-  browser.close();
-}
-
-async function getscreen(url, filename) {
+/**
+ *
+ * @param {String} path - Path from source file
+ * @param {String} filename - Filename for screenshot
+ * @param {String} distUrl - Output URL
+ */
+async function getScreenshot(path, filename, distUrl) {
   try {
-    console.log("Getting: " + url);
-    await page.setViewport({ width: settings.imgwidth, height: settings.imgheight });
-    await page.goto(url, { waitUntil: 'networkidle0' });
-    const buffer = await page.screenshot();
+    page = await browser.newPage();
+    let srcUrl = settings.domain + path;
+
+    console.log("Getting: " + path);
+    await page.setViewport({
+      width: settings.imgwidth,
+      height: settings.imgheight,
+    });
+    await page.goto(srcUrl, { waitUntil: "networkidle0" });
+    await page.screenshot({ path: distUrl });
     console.log("Got: " + filename + ".png");
-    return buffer;
-  }
-  catch (err) {
-    console.log('Error getscreen:', err);
+  } catch (err) {
+    console.error("Error getscreen:", err);
   }
 }
 
-async function uploadBuffer(file, buffer, filename) {
-  return new Promise((resolve) => {
-      file.save(buffer, { destination: filename }, () => {
-          resolve();
-      });
-  })
-}
-
+/**
+ * Setup Dummy directory for netlify
+ */
 function dummydist() {
-  if (!fs.existsSync('dist')){
-    fs.mkdirSync('dist');
-  }
-  fs.writeFile('dist/index.html', '', function (err) {
+  createDirectory("public");
+  fs.writeFile("public/index.html", "", function (err) {
     if (err) throw err;
-    console.log('Dummy dist created');
+    console.log("Dummy dist created");
   });
 }
 
-axios.get(settings.source)
+/**
+ * Start Axios to get and pass source file
+ */
+axios
+  .get(settings.source)
   .then((response) => {
-    setupGoogleStorage(response.data);
+    dummydist();
+    setupPuppeteer(response.data);
   })
   .catch((err) => {
-    console.log('Error Axios: ', err)
-  })
-  .finally(() => {
-    dummydist();
+    console.error("Error Axios: ", err);
   });
-
-
-
