@@ -4,10 +4,11 @@ const fs = require("fs");
 require("dotenv").config();
 
 const settings = {
-  source: "https://www.d-hagemeier.com/preview-images.json",
-  domain: "https://www.d-hagemeier.com",
-  imgwidth: 1200,
-  imgheight: 628,
+  source: "https://pej-research-report.netlify.app/index.json",
+  domain: "https://pej-research-report.netlify.app/",
+  imgWidth: 1200,
+  imgHeight: 628,
+  imgScale: 2,
 };
 
 /**
@@ -42,13 +43,13 @@ function createDirectory(dirPath) {
 async function setupPuppeteer(response) {
   try {
     browser = await puppeteer.launch({ headless: true });
-    distDir = await createDirectory("public/cache");
+    distDir = await createDirectory("public/img");
 
     var i;
     for (i = 0; i < response.length; i++) {
       let filename = response[i].filename;
       let path = response[i].path;
-      let distUrl = "public/cache/" + filename + ".png";
+      let distUrl = "public/img/" + filename + ".png";
       let existFlag = await fileExist(distUrl);
       if (existFlag) {
         await getScreenshot(path, filename, distUrl);
@@ -70,12 +71,13 @@ async function setupPuppeteer(response) {
 async function getScreenshot(path, filename, distUrl) {
   try {
     page = await browser.newPage();
-    let srcUrl = settings.domain + path;
+    let srcUrl = path;
 
     console.log("Getting: " + path);
     await page.setViewport({
-      width: settings.imgwidth,
-      height: settings.imgheight,
+      width: settings.imgWidth,
+      height: settings.imgHeight,
+      deviceScaleFactor: settings.imgScale
     });
     await page.goto(srcUrl, { waitUntil: "networkidle0" });
     await page.screenshot({ path: distUrl });
@@ -103,7 +105,7 @@ axios
   .get(settings.source)
   .then((response) => {
     dummydist();
-    setupPuppeteer(response.data);
+    setupPuppeteer(response.data.cards);
   })
   .catch((err) => {
     console.error("Error Axios: ", err);
