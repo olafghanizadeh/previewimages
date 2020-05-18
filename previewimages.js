@@ -8,7 +8,7 @@ const settings = {
   domain: "https://pej-research-report.netlify.app/",
   imgWidth: 1200,
   imgHeight: 628,
-  imgScale: 2,
+  imgScale: 1,
 };
 
 /**
