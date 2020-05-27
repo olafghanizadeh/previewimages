@@ -4,8 +4,8 @@ const fs = require("fs");
 require("dotenv").config();
 
 const settings = {
-  source: "https://pej-research-report.netlify.app/index.json",
-  domain: "https://pej-research-report.netlify.app/",
+  source: "https://research.pej.pt/index.json",
+  domain: "https://research.pej.pt/",
   imgWidth: 1200,
   imgHeight: 628,
   imgScale: 1,
