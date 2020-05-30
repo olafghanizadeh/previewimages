@@ -2,10 +2,12 @@ const axios = require("axios");
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 require("dotenv").config();
+const { SOURCE } = process.env
+
 
 const settings = {
-  source: "https://research.pej.pt/index.json",
-  domain: "https://research.pej.pt/",
+  source: `${SOURCE}/index.json`,
+  domain: `${SOURCE}`,
   imgWidth: 1200,
   imgHeight: 628,
   imgScale: 1,
